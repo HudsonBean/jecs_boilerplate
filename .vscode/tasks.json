@@ -9,6 +9,14 @@
       "problemMatcher": []
     },
     {
+      "label": "packages:install",
+      "detail": "Install wally packages and re-export their Luau types into the thunks",
+      "type": "shell",
+      "command": "wally install; rojo sourcemap default.project.json --output sourcemap.json; wally-package-types --sourcemap sourcemap.json Packages/",
+      "presentation": { "panel": "dedicated", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
       "label": "sourcemap:watch",
       "type": "shell",
       "command": "rojo sourcemap default.project.json --watch --output sourcemap.json",

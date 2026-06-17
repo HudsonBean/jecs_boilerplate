@@ -3,6 +3,31 @@
 registry = "test"
 
 [[package]]
+name = "alicesaidhi/jabby"
+version = "0.3.1"
+dependencies = [["jecs", "ukendio/jecs@0.8.3"], ["pebble", "alicesaidhi/pebble@0.1.2"], ["vide", "centau/vide@0.3.1"]]
+
+[[package]]
+name = "alicesaidhi/pebble"
+version = "0.1.2"
+dependencies = [["vide", "centau/vide@0.3.1"]]
+
+[[package]]
+name = "aloroid/vide-with-types"
+version = "0.2.7"
+dependencies = []
+
+[[package]]
+name = "centau/vide"
+version = "0.3.1"
+dependencies = []
+
+[[package]]
+name = "corecii/greentea"
+version = "0.4.11"
+dependencies = []
+
+[[package]]
 name = "pepeeltoro41/replecs"
 version = "0.3.1"
 dependencies = [["jecs", "ukendio/jecs@0.10.4"]]
@@ -10,7 +35,17 @@ dependencies = [["jecs", "ukendio/jecs@0.10.4"]]
 [[package]]
 name = "style/testing"
 version = "0.1.0"
-dependencies = [["jecs", "ukendio/jecs@0.11.0"], ["planck", "yetanotherclown/planck@0.2.0"], ["planck-runservice", "yetanotherclown/planck-runservice@0.2.0"], ["replecs", "pepeeltoro41/replecs@0.3.1"]]
+dependencies = [["jabby", "uxnkown/jabby@1.0.0"], ["jecs", "ukendio/jecs@0.11.0"], ["planck", "yetanotherclown/planck@0.2.0"], ["planck-jabby", "yetanotherclown/planck-jabby@0.2.0"], ["planck-runservice", "yetanotherclown/planck-runservice@0.2.0"], ["replecs", "pepeeltoro41/replecs@0.3.1"]]
+
+[[package]]
+name = "ukendio/jecs"
+version = "0.3.2"
+dependencies = []
+
+[[package]]
+name = "ukendio/jecs"
+version = "0.8.3"
+dependencies = []
 
 [[package]]
 name = "ukendio/jecs"
@@ -23,9 +58,19 @@ version = "0.11.0"
 dependencies = []
 
 [[package]]
+name = "uxnkown/jabby"
+version = "1.0.0"
+dependencies = [["jecs", "ukendio/jecs@0.3.2"], ["pebble", "alicesaidhi/pebble@0.1.2"], ["t", "corecii/greentea@0.4.11"], ["vide", "aloroid/vide-with-types@0.2.7"]]
+
+[[package]]
 name = "yetanotherclown/planck"
 version = "0.2.0"
 dependencies = []
+
+[[package]]
+name = "yetanotherclown/planck-jabby"
+version = "0.2.0"
+dependencies = [["Jabby", "alicesaidhi/jabby@0.3.1"]]
 
 [[package]]
 name = "yetanotherclown/planck-runservice"
