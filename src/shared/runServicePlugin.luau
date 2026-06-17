@@ -1,3 +1,3 @@
-local PlanckRunService = require(game.ReplicatedStorage.Shared.Packages["planck-runservice"])
+local PlanckRunService = require("@Packages/planck-runservice")
 
 return PlanckRunService.Plugin.new()

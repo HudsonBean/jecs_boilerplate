@@ -1,0 +1,43 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "sourcemap:once",
+      "type": "shell",
+      "command": "rojo sourcemap default.project.json --output sourcemap.json",
+      "presentation": { "panel": "dedicated", "reveal": "silent" },
+      "problemMatcher": []
+    },
+    {
+      "label": "sourcemap:watch",
+      "type": "shell",
+      "command": "rojo sourcemap default.project.json --watch --output sourcemap.json",
+      "isBackground": true,
+      "presentation": { "panel": "dedicated", "reveal": "never" },
+      "problemMatcher": []
+    },
+    {
+      "label": "darklua:watch",
+      "type": "shell",
+      "command": "darklua process src out/src --watch",
+      "isBackground": true,
+      "dependsOn": ["sourcemap:once"],
+      "presentation": { "panel": "dedicated", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "rojo:serve",
+      "type": "shell",
+      "command": "rojo serve build.project.json",
+      "isBackground": true,
+      "presentation": { "panel": "dedicated", "reveal": "always" },
+      "problemMatcher": []
+    },
+    {
+      "label": "dev",
+      "dependsOn": ["sourcemap:watch", "darklua:watch", "rojo:serve"],
+      "runOptions": { "runOn": "folderOpen" },
+      "problemMatcher": []
+    }
+  ]
+}
