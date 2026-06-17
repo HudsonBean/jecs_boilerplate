@@ -3,11 +3,26 @@
 registry = "test"
 
 [[package]]
+name = "pepeeltoro41/replecs"
+version = "0.3.1"
+dependencies = [["jecs", "ukendio/jecs@0.10.4"]]
+
+[[package]]
 name = "style/testing"
 version = "0.1.0"
-dependencies = [["jecs", "ukendio/jecs@0.11.0"]]
+dependencies = [["jecs", "ukendio/jecs@0.11.0"], ["planck", "yetanotherclown/planck@0.2.0"], ["replecs", "pepeeltoro41/replecs@0.3.1"]]
+
+[[package]]
+name = "ukendio/jecs"
+version = "0.10.4"
+dependencies = []
 
 [[package]]
 name = "ukendio/jecs"
 version = "0.11.0"
+dependencies = []
+
+[[package]]
+name = "yetanotherclown/planck"
+version = "0.2.0"
 dependencies = []
