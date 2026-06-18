@@ -5,12 +5,23 @@ local ref = require(script.Parent:FindFirstChild('utils'):FindFirstChild('ecs'):
 local replecs = require(script.Parent.Parent:FindFirstChild('Packages'):FindFirstChild('replecs'))
 local world = require(script.Parent:FindFirstChild('world'))
 
+export type TimerInterface = {
+	start: number,
+	wait: number,
+	repeats: boolean?,
+	callback: (jecs.Entity<any>) -> (),
+}
+
 local components = {
 	player = world:component() :: jecs.Entity<Player>,
 	client = world:entity(),
+	player_setup = world:component() :: jecs.Entity<(Player, jecs.Entity<any>) -> ()>,
 	cleanup = world:component() :: jecs.Entity<(jecs.Entity<any>) -> ()>,
 
 	health = world:component() :: jecs.Entity<number>,
+
+	timer = world:component() :: jecs.Entity<TimerInterface>,
+	unix = world:component() :: jecs.Entity<number>,
 }
 
 -- Consistent player mapping
