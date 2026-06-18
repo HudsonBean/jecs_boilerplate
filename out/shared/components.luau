@@ -1,5 +1,5 @@
 local add_names = require(script.Parent:FindFirstChild('utils'):FindFirstChild('ecs'):FindFirstChild('add_names'))
-local add_shared = require("@Shared/utils/ecs/add_shared")
+local add_shared = require(script.Parent:FindFirstChild('utils'):FindFirstChild('ecs'):FindFirstChild('add_shared'))
 local jecs = require(script.Parent.Parent:FindFirstChild('Packages'):FindFirstChild('jecs'))
 local ref = require(script.Parent:FindFirstChild('utils'):FindFirstChild('ecs'):FindFirstChild('ref'))
 local replecs = require(script.Parent.Parent:FindFirstChild('Packages'):FindFirstChild('replecs'))

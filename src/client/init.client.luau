@@ -7,7 +7,10 @@ replicator:init()
 
 local buf, variants = net.ReceiveFull.Invoke(nil)
 
-local systemsOrder = {}
+local systemsOrder = {
+	require("@Client/Systems/replecsClient"),
+	require("@Client/Systems/testingSystem"),
+}
 
 scheduler:addSystems(systemsOrder)
 

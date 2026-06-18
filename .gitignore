@@ -10,3 +10,4 @@ sourcemap.json
 wally.lock
 
 Packages/
+out/

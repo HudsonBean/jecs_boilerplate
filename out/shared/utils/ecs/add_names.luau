@@ -1,4 +1,3 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local jecs = require(game:GetService('ReplicatedStorage'):FindFirstChild('Packages'):FindFirstChild('jecs'))
 local world = require(script.Parent.Parent.Parent:FindFirstChild('world'))
 

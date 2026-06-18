@@ -1,4 +1,3 @@
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local jecs = require("@Packages/jecs")
 local world = require("@Shared/world")
 

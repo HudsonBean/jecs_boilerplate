@@ -1,7 +1,7 @@
 local planckRunService = require(game:GetService('ReplicatedStorage'):FindFirstChild('Packages'):FindFirstChild('planck-runservice'))
 
 local function healthSystem()
-	print("Hello World!")
+	-- print("Hello World!")
 end
 
 return {

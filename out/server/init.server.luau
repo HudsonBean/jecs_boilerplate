@@ -6,6 +6,7 @@ local players = require(game:GetService('ReplicatedStorage'):FindFirstChild('Sha
 replicator:init()
 
 local systemsOrder = {
+	require(script:FindFirstChild('Systems'):FindFirstChild('replecsServer')),
 	require(script:FindFirstChild('Systems'):FindFirstChild('healthSystem')),
 }
 

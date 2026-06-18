@@ -1,7 +1,7 @@
 local planckRunService = require("@Packages/planck-runservice")
 
 local function healthSystem()
-	print("Hello World!")
+	-- print("Hello World!")
 end
 
 return {

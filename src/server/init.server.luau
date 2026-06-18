@@ -6,6 +6,7 @@ local players = require("@Shared/players")
 replicator:init()
 
 local systemsOrder = {
+	require("@Server/Systems/replecsServer"),
 	require("@Server/Systems/healthSystem"),
 }
 
