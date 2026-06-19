@@ -44,6 +44,9 @@ local components = {
 	damage_source = world:component() :: jecs.Entity<DamageSourceInterface>,
 	dead = world:entity(),
 
+	-- Relation: pair(cooldown, sourceEntity) on victim stores os.clock() expiry time
+	cooldown = world:component() :: jecs.Entity<number>,
+
 	timer = world:component() :: jecs.Entity<TimerInterface>,
 	unix = world:component() :: jecs.Entity<number>,
 }

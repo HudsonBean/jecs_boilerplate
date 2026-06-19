@@ -6,10 +6,10 @@ local planckRunService = require("@Packages/planck-runservice")
 local ref = require("@Shared/utils/ecs/ref")
 local world = require("@Shared/world")
 
+local pair = jecs.pair
+
 local overlapParams = OverlapParams.new()
 overlapParams.FilterType = Enum.RaycastFilterType.Exclude
-
-local lastHit: { [jecs.Entity<any>]: { [jecs.Entity<any>]: number } } = {}
 
 local function getPlayerEntityFromPart(part: BasePart): jecs.Entity<any>?
 	local model = part:FindFirstAncestorOfClass("Model")
@@ -33,6 +33,12 @@ local function canTakeDamage(entity: jecs.Entity<any>): boolean
 	return world:has(entity, c.health) and not world:has(entity, c.dead)
 end
 
+-- Victim is on cooldown for this specific damage source until expiresAt
+local function isOnCooldown(victimEntity: jecs.Entity<any>, sourceEntity: jecs.Entity<any>, now: number): boolean
+	local expiresAt = world:get(victimEntity, pair(c.cooldown, sourceEntity))
+	return expiresAt ~= nil and now < expiresAt
+end
+
 local function damageSystem()
 	local now = os.clock()
 
@@ -49,19 +55,11 @@ local function damageSystem()
 			if not victimEntity or not canTakeDamage(victimEntity) then
 				continue
 			end
-
-			local sourceHits = lastHit[sourceEntity]
-			local last = sourceHits and sourceHits[victimEntity]
-			if last and now - last < source.delay then
+			if isOnCooldown(victimEntity, sourceEntity, now) then
 				continue
 			end
 
-			if not sourceHits then
-				sourceHits = {}
-				lastHit[sourceEntity] = sourceHits
-			end
-			sourceHits[victimEntity] = now
-
+			world:set(victimEntity, pair(c.cooldown, sourceEntity), now + source.delay)
 			world:set(victimEntity, c.damage, {
 				damage = source.damage,
 				source = sourceEntity,

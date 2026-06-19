@@ -28,6 +28,7 @@ function timers()
 		timer.callback(entity)
 		if timer.repeats then
 			timer.start = now
+			world:set(entity, c.timer, timer)
 		else
 			world:delete(entity)
 		end

@@ -43,7 +43,7 @@ jabby.register({
 	configuration = { world = world :: any },
 })
 
--- Initial player setup on join (move respawn flow to respawnSystem later)
+-- Initial player setup on join
 local characterSetup = world:entity()
 world:set(characterSetup, c.player_setup, function(player: Player, _entity)
 	spawnCharacter(player)

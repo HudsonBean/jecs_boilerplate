@@ -29,13 +29,12 @@ end
 local function attachComponents(entity: jecs.Entity<any>, character: Model)
 	world:set(entity, c.character, character)
 
-	-- Health is created once; respawn/heal policy stays in respawnSystem.
-	if world:has(entity, c.health) then
-		return
+	-- Health is removed on death; assign fresh stats whenever a body is spawned in.
+	if not world:has(entity, c.health) then
+		replicator:set_reliable(entity, c.health)
 	end
 
 	world:set(entity, c.health, table.clone(DEFAULT_HEALTH))
-	replicator:set_reliable(entity, c.health)
 end
 
 local function loadCharacter(player: Player, position: Vector3): Model?
