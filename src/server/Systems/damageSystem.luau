@@ -11,13 +11,12 @@ local pair = jecs.pair
 local overlapParams = OverlapParams.new()
 overlapParams.FilterType = Enum.RaycastFilterType.Exclude
 
+-- Reuse query matching across frames instead of rebuilding it every tick.
+local q_damage_sources = world:query(c.damage_source):cached()
+
 local function getPlayerEntityFromPart(part: BasePart): jecs.Entity<any>?
 	local model = part:FindFirstAncestorOfClass("Model")
-	if not model then
-		return nil
-	end
-
-	if not model:FindFirstChildOfClass("Humanoid") then
+	if not model or not model:FindFirstChildOfClass("Humanoid") then
 		return nil
 	end
 
@@ -33,16 +32,43 @@ local function canTakeDamage(entity: jecs.Entity<any>): boolean
 	return world:has(entity, c.health) and not world:has(entity, c.dead)
 end
 
--- Victim is on cooldown for this specific damage source until expiresAt
-local function isOnCooldown(victimEntity: jecs.Entity<any>, sourceEntity: jecs.Entity<any>, now: number): boolean
-	local expiresAt = world:get(victimEntity, pair(c.cooldown, sourceEntity))
-	return expiresAt ~= nil and now < expiresAt
+--[[
+	Hazard hit cooldown lives on the VICTIM, not the hazard.
+
+	Each successful hit writes pair(c.damage_cooldown, sourceEntity) on the victim with an
+	expiry timestamp (os.clock). Until that time passes, the same hazard cannot
+	apply another c.damage event to that victim.
+
+	source.delay (on the hazard) is the config: "wait this many seconds between ticks."
+]]
+local function tryApplyHit(
+	victimEntity: jecs.Entity<any>,
+	sourceEntity: jecs.Entity<any>,
+	source: c.DamageSourceInterface,
+	now: number
+): boolean
+	local hitCooldown = pair(c.damage_cooldown, sourceEntity)
+	local expiresAt = world:get(victimEntity, hitCooldown)
+
+	if expiresAt then
+		if now < expiresAt then
+			return false -- still on cooldown for this hazard
+		end
+		world:remove(victimEntity, hitCooldown) -- expired; drop the stale pair
+	end
+
+	world:set(victimEntity, hitCooldown, now + source.delay)
+	world:set(victimEntity, c.damage, {
+		damage = source.damage,
+		source = sourceEntity,
+	})
+	return true
 end
 
 local function damageSystem()
 	local now = os.clock()
 
-	for sourceEntity, source: c.DamageSourceInterface in world:query(c.damage_source) do
+	for sourceEntity, source: c.DamageSourceInterface in q_damage_sources:iter() do
 		local hitbox = source.instance
 		if not hitbox or not hitbox.Parent then
 			continue
@@ -55,15 +81,8 @@ local function damageSystem()
 			if not victimEntity or not canTakeDamage(victimEntity) then
 				continue
 			end
-			if isOnCooldown(victimEntity, sourceEntity, now) then
-				continue
-			end
 
-			world:set(victimEntity, pair(c.cooldown, sourceEntity), now + source.delay)
-			world:set(victimEntity, c.damage, {
-				damage = source.damage,
-				source = sourceEntity,
-			})
+			tryApplyHit(victimEntity, sourceEntity, source, now)
 		end
 	end
 end

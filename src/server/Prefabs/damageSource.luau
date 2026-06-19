@@ -1,9 +1,11 @@
+local CollectionService = game:GetService("CollectionService")
+
 local c = require("@Shared/components")
 local jecs = require("@Packages/jecs")
 local ref = require("@Shared/utils/ecs/ref")
 local world = require("@Shared/world")
-local CollectionService = game:GetService("CollectionService")
-local tagService = game:GetService("CollectionService")
+
+local TAG = "damage_source"
 
 local function attachComponents(instance: BasePart, damage: number?, delay: number?)
 	local resolvedDamage = tonumber(damage or instance:GetAttribute("damage"))
@@ -12,24 +14,25 @@ local function attachComponents(instance: BasePart, damage: number?, delay: numb
 		warn("[damageSource prefab] damage or delay not set for instance:", instance.Name)
 		return nil
 	end
+
 	instance.CanQuery = true
 
-	return ref(instance, function(e)
-		world:set(e, c.damage_source, {
+	return ref(instance, function(entity)
+		world:set(entity, c.damage_source, {
 			damage = resolvedDamage,
 			delay = resolvedDelay,
 			instance = instance,
 		})
-		world:set(e, c.cleanup, function()
+		-- ref maps this BasePart -> entity so tag add/remove can find the same entity.
+		world:set(entity, c.cleanup, function()
 			ref.unlist(instance)
 		end)
-		-- Touched or leave to hazardSystem
 	end)
 end
 
 local function spawnDamageSource(position: Vector3, damage: number, delay: number): jecs.Entity<any>
 	local damageSource = Instance.new("Part")
-	damageSource:AddTag("damage_source")
+	damageSource:AddTag(TAG)
 	damageSource:SetAttribute("delay", delay)
 	damageSource:SetAttribute("damage", damage)
 	damageSource.Name = "damage_source"
@@ -39,6 +42,7 @@ local function spawnDamageSource(position: Vector3, damage: number, delay: numbe
 	damageSource.BottomSurface = Enum.SurfaceType.Smooth
 	damageSource.Color = Color3.fromRGB(196, 40, 28)
 	damageSource.CFrame = CFrame.new(position)
+
 	local particleEmitter = Instance.new("ParticleEmitter")
 	particleEmitter.LightInfluence = 1
 	particleEmitter.Rate = 14
@@ -47,26 +51,26 @@ local function spawnDamageSource(position: Vector3, damage: number, delay: numbe
 	particleEmitter.Transparency = NumberSequence.new(0.1)
 	particleEmitter.Speed = NumberRange.new(1)
 	particleEmitter.Lifetime = NumberRange.new(2.5)
-	particleEmitter.Color = ColorSequence.new(Color3.fromRGB(255, 0, 0), Color3.fromRGB(255, 0, 0))
+	particleEmitter.Color =
+		NumberSequence.new({ NumberSequenceKeypoint.new(0, 255), NumberSequenceKeypoint.new(1, 255) })
 	particleEmitter.Parent = damageSource
 
 	return attachComponents(damageSource, damage, delay)
 end
 
--- Register parts that were preplaced and tagged
-local tag = "damage_source"
-for _, instance in pairs(tagService:GetTagged(tag)) do
+for _, instance in CollectionService:GetTagged(TAG) do
 	attachComponents(instance)
 end
-CollectionService:GetInstanceAddedSignal(tag):Connect(attachComponents)
-CollectionService:GetInstanceRemovedSignal(tag):Connect(function(instance: BasePart)
+
+CollectionService:GetInstanceAddedSignal(TAG):Connect(attachComponents)
+CollectionService:GetInstanceRemovedSignal(TAG):Connect(function(instance: BasePart)
 	local entity = ref.search(instance)
 	if not entity then
-		warn("[damageSource prefab] entity not found for instance:", instance.Name)
 		return
 	end
-	world:remove(entity, c.damage_source)
-	world:remove(entity, c.cleanup)
+
+	-- delete triggers the c.cleanup hook, which unlists the instance from ref.
+	world:delete(entity)
 end)
 
 return spawnDamageSource

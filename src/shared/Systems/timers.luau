@@ -4,7 +4,7 @@ local world = require("@Shared/world")
 
 local q_timers = world:query(c.timer):cached()
 
-function timers()
+local function timers()
 	local now = os.clock()
 
 	for entity, timer in q_timers:iter() do
@@ -20,16 +20,17 @@ function timers()
 			continue
 		end
 
-		local elapsed = now - timer.start
-
-		if elapsed < timer.wait then
+		if now - timer.start < timer.wait then
 			continue
 		end
+
 		timer.callback(entity)
+
 		if timer.repeats then
 			timer.start = now
 			world:set(entity, c.timer, timer)
 		else
+			-- One-shot timer entities (e.g. from scheduleDelay) are deleted after firing.
 			world:delete(entity)
 		end
 	end

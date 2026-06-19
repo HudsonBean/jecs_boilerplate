@@ -25,11 +25,10 @@ local function getDefaultSpawn(): Vector3 -- TODO: Get spawn location from confi
 	return Vector3.new(0, 5, 0)
 end
 
--- Attach baseline components shared by players and NPCs.
 local function attachComponents(entity: jecs.Entity<any>, character: Model)
 	world:set(entity, c.character, character)
 
-	-- Health is removed on death; assign fresh stats whenever a body is spawned in.
+	-- Register replication once; death removes health, respawn writes fresh stats here.
 	if not world:has(entity, c.health) then
 		replicator:set_reliable(entity, c.health)
 	end

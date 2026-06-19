@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+
 local c = require("@Shared/components")
 local ref = require("@Shared/utils/ecs/ref")
 local replecs = require("@Packages/replecs")
@@ -19,6 +20,7 @@ function setup(player: Player)
 		replicator.server:set_reliable(entity, c.unix)
 		world:set(entity, c.unix, 0)
 
+		-- Repeating timer lives on the player entity; one-shot delays use scheduleDelay instead.
 		world:set(entity, c.timer, {
 			start = os.clock(),
 			wait = 1,
@@ -36,9 +38,13 @@ end
 
 function players.cleanup(player: Player)
 	local entity = ref.search(player)
-	if entity then
-		world:delete(entity)
+	if not entity then
+		return
 	end
+
+	-- Deletes the entity and every component on it (health, dead, damage_cooldown pairs, timer, etc.).
+	world:delete(entity)
+	ref.unlist(player)
 end
 
 function players.start_current_players()

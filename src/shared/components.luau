@@ -34,7 +34,6 @@ export type DamageInterface = {
 
 local components = {
 	player = world:component() :: jecs.Entity<Player>,
-	client = world:entity(),
 	player_setup = world:component() :: jecs.Entity<(Player, jecs.Entity<any>) -> ()>,
 	cleanup = world:component() :: jecs.Entity<(jecs.Entity<any>) -> ()>,
 
@@ -44,8 +43,9 @@ local components = {
 	damage_source = world:component() :: jecs.Entity<DamageSourceInterface>,
 	dead = world:entity(),
 
-	-- Relation: pair(cooldown, sourceEntity) on victim stores os.clock() expiry time
-	cooldown = world:component() :: jecs.Entity<number>,
+	-- Relation: pair(damage_cooldown, sourceEntity) on victims; value = os.clock() expiry time.
+	-- Hazard-only today. Use a separate relation (e.g. ability_cooldown) for player attacks.
+	damage_cooldown = world:component() :: jecs.Entity<number>,
 
 	timer = world:component() :: jecs.Entity<TimerInterface>,
 	unix = world:component() :: jecs.Entity<number>,

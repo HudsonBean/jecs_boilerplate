@@ -54,6 +54,8 @@ function unlist(key: any)
 	refs[key] = nil
 end
 
+-- Call unlist when the keyed instance is destroyed (see players.cleanup and damageSource prefab).
+
 local metatable = {
 	__call = __call,
 }

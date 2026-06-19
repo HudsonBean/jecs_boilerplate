@@ -6,12 +6,13 @@ local planckRunService = require("@Packages/planck-runservice")
 local updates_interval = interval(1 / 20)
 local unreliable_interval = interval(1 / 30)
 
-function replecsServer()
+local function replecsServer()
 	if updates_interval() then
 		for player, buf, variants in replicator:collect_updates() do
 			net.SendUpdates.Fire(player, buf, variants)
 		end
 	end
+
 	if unreliable_interval() then
 		for player, buf, variants in replicator:collect_unreliable() do
 			net.SendUnreliables.Fire(player, buf, variants)
