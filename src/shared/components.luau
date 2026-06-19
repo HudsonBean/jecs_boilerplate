@@ -18,6 +18,7 @@ export type HealthInterface = {
 	regen: number,
 	regen_multiplier: number,
 	regen_delay: number,
+	regenerating: boolean,
 }
 
 export type DamageSourceInterface = {

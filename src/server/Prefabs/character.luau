@@ -15,6 +15,7 @@ local DEFAULT_HEALTH: c.HealthInterface = {
 	regen = 1,
 	regen_multiplier = 1,
 	regen_delay = 5,
+	regenerating = false,
 }
 
 local function getDefaultSpawn(): Vector3 -- TODO: Get spawn location from config
