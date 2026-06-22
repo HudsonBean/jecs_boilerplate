@@ -1,3 +1,10 @@
+--[[
+	HP reached 0: tag c.dead and strip the living character bundle.
+
+	healthSystem stops querying dead entities once c.health is removed.
+	respawnSystem picks up c.dead later.
+]]
+
 local c = require("@Shared/components")
 local clearRelation = require("@Shared/utils/ecs/clearRelation")
 local planckRunService = require("@Packages/planck-runservice")
@@ -5,7 +12,6 @@ local world = require("@Shared/world")
 
 local q_health = world:query(c.health):cached()
 
--- Strip the living character bundle. Health is removed so deathSystem won't re-trigger on HP 0.
 local function cleanupCharacter(entity)
 	if world:has(entity, c.character) then
 		local character = world:get(entity, c.character) :: Model
@@ -17,8 +23,7 @@ local function cleanupCharacter(entity)
 		world:remove(entity, c.health)
 	end
 
-	-- Victims accumulate pair(damage_cooldown, hazard) relations while standing in hazards.
-	-- Clear them on death so a respawned body doesn't inherit "recently hit" timestamps.
+	-- Drop hazard hit cooldowns so respawn does not inherit stale timestamps.
 	clearRelation(entity, c.damage_cooldown)
 end
 

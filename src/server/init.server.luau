@@ -6,9 +6,11 @@ local replicator = require("@Shared/replicator").server
 local bootstrapPrefabs = require("@Shared/utils/bootstrapPrefabs")
 local c = require("@Shared/components")
 local jabby = require("@Packages/jabby")
+local jecs = require("@Packages/jecs")
 local players = require("@Shared/players")
-local spawnPlayer = require("@Server/Prefabs/player")
 local world = require("@Shared/world")
+
+local pair = jecs.pair
 
 bootstrapPrefabs(ServerScriptService:WaitForChild("Server"))
 
@@ -23,14 +25,16 @@ net.ReceiveFull.On(function(player)
 	return replicator:get_full(player)
 end)
 
--- Update:    timers → fire delays; damage → write c.damage on victims
--- PostUpdate: health → apply damage + regen; death → tag c.dead; respawn → revive c.dead; replecs → replicate
+-- Update:    timers → damage → quest intents
+-- PostUpdate: health → death → respawn (queues spawn_request) → spawn → replicate
 local systemsOrder = {
 	require("@Shared/Systems/timers"),
 	require("@Server/Systems/damageSystem"),
+	require("@Server/Systems/questSystem"),
 	require("@Server/Systems/healthSystem"),
 	require("@Server/Systems/deathSystem"),
 	require("@Server/Systems/respawnSystem"),
+	require("@Server/Systems/spawnSystem"),
 	require("@Server/Systems/replecsServer"),
 }
 
@@ -43,8 +47,9 @@ jabby.register({
 })
 
 local playerSetup = world:entity()
-world:set(playerSetup, c.player_setup, function(player: Player, _entity)
-	spawnPlayer(player)
+world:set(playerSetup, c.player_setup, function(_player: Player, entity)
+	-- Same path as respawn: spawnSystem runs spawnPlayer when it sees the pair.
+	world:add(entity, pair(c.spawn_request, entity))
 end)
 
 players.start_current_players()

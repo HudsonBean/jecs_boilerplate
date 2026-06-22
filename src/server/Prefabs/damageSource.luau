@@ -1,5 +1,11 @@
 local CollectionService = game:GetService("CollectionService")
 
+--[[
+	World hazards: attach c.damage_source to tagged Parts (Studio or spawnDamageSource CLI).
+
+	Not routed through spawn_request — the Part already exists; we only ECS-bind it.
+]]
+
 local c = require("@Shared/components")
 local jecs = require("@Packages/jecs")
 local ref = require("@Shared/utils/ecs/ref")

@@ -2,16 +2,14 @@ local Players = game:GetService("Players")
 
 local c = require("@Shared/components")
 local jecs = require("@Packages/jecs")
+local SpawnOptionsTypes = require("@Shared/types/spawn_options")
 local ref = require("@Shared/utils/ecs/ref")
 local replicator = require("@Shared/replicator").server
 local world = require("@Shared/world")
 
 Players.CharacterAutoLoads = false
 
-export type SpawnPlayerOptions = {
-	position: Vector3?,
-	cframe: CFrame?,
-}
+export type SpawnPlayerOptions = SpawnOptionsTypes.SpawnOptions
 
 -- TODO: Replace with per-player config lookup
 local DEFAULT_HEALTH: c.HealthInterface = {

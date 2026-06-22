@@ -1,3 +1,7 @@
+--[[
+	Flushes replecs deltas to clients at fixed rates. No game logic; safe to remove in a headless test.
+]]
+
 local replicator = require("@Shared/replicator").server
 local interval = require("@Shared/utils/interval")
 local net = require("@Server/Networking/server")

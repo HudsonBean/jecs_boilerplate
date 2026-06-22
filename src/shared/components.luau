@@ -1,3 +1,8 @@
+local DamageTypes = require("@Shared/types/damage")
+local HealthTypes = require("@Shared/types/health")
+local QuestTypes = require("@Shared/types/quest")
+local SpawnOptionsTypes = require("@Shared/types/spawn_options")
+local TimerTypes = require("@Shared/types/timer")
 local add_names = require("@Shared/utils/ecs/add_names")
 local add_shared = require("@Shared/utils/ecs/add_shared")
 local jecs = require("@Packages/jecs")
@@ -5,35 +10,16 @@ local ref = require("@Shared/utils/ecs/ref")
 local replecs = require("@Packages/replecs")
 local world = require("@Shared/world")
 
-export type TimerInterface = {
-	start: number,
-	wait: number,
-	repeats: boolean?,
-	callback: (jecs.Entity<any>) -> (),
-}
-
-export type HealthInterface = {
-	health: number,
-	max_health: number,
-	regen: number,
-	regen_multiplier: number,
-	regen_delay: number,
-	regenerating: boolean,
-}
-
-export type DamageSourceInterface = {
-	damage: number,
-	delay: number, -- Delay in seconds before hitting the same target
-	instance: BasePart,
-}
-
--- on victim consumed in healthSystem
-export type DamageInterface = {
-	damage: number,
-	source: jecs.Entity<any>,
-}
-
-export type NpcIdInterface = string
+-- Re-export shared types for `c.HealthInterface`-style access from systems.
+export type HealthInterface = HealthTypes.HealthInterface
+export type DamageInterface = DamageTypes.DamageInterface
+export type DamageSourceInterface = DamageTypes.DamageSourceInterface
+export type TimerInterface = TimerTypes.TimerInterface
+export type SpawnOptionsInterface = SpawnOptionsTypes.SpawnOptions
+export type QuestState = QuestTypes.QuestState
+export type QuestProgress = QuestTypes.QuestProgress
+export type QuestStateInterface = QuestTypes.QuestStateInterface
+export type QuestObjectiveReportInterface = QuestTypes.QuestObjectiveReport
 
 local components = {
 	player = world:component() :: jecs.Entity<Player>,
@@ -46,25 +32,33 @@ local components = {
 	damage_source = world:component() :: jecs.Entity<DamageSourceInterface>,
 	dead = world:entity(),
 
-	npc = world:entity(),
-	npc_id = world:component() :: jecs.Entity<NpcIdInterface>,
+	npc = world:component() :: jecs.Entity<string>,
 	hostile = world:entity(),
 
-	-- Relation: pair(damage_cooldown, sourceEntity) on victims; value = os.clock() expiry time.
-	-- Hazard-only today. Use a separate relation (e.g. ability_cooldown) for player attacks.
+	spawn_options = world:component() :: jecs.Entity<SpawnOptionsInterface>,
+	spawn_ticket = world:entity(),
+
 	damage_cooldown = world:component() :: jecs.Entity<number>,
 
+	-- pair(c.spawn_request, entity): consumed by spawnSystem (players, NPC tickets, NPC respawn).
+	spawn_request = world:component(),
+
 	timer = world:component() :: jecs.Entity<TimerInterface>,
+	-- Per-character session time; reset when character config / permadeath is implemented.
 	unix = world:component() :: jecs.Entity<number>,
+
+	quest_state = world:component() :: jecs.Entity<QuestStateInterface>,
+	-- One-shot intents consumed by questSystem.
+	quest_start = world:component() :: jecs.Entity<string>,
+	quest_complete = world:component() :: jecs.Entity<string>,
+	quest_objective = world:component() :: jecs.Entity<QuestObjectiveReportInterface>,
 }
 
--- Consistent player mapping
 world:set(components.player, replecs.custom_handler, function(player: Player)
 	local entity = ref(player)
 	return entity
 end)
 
--- Setup cleanup callback
 world:removed(components.cleanup, function(entity: jecs.Entity<any>)
 	local callback = world:get(entity, components.cleanup)
 

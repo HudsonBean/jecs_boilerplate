@@ -18,7 +18,9 @@ function setup(player: Player)
 		replicator.server:set_custom(entity, c.player)
 		replicator.server:set_reliable(entity, c.player)
 		replicator.server:set_reliable(entity, c.unix)
+		replicator.server:set_reliable(entity, c.quest_state)
 		world:set(entity, c.unix, 0)
+		world:set(entity, c.quest_state, { quests = {} })
 
 		-- Repeating timer lives on the player entity; one-shot delays use scheduleDelay instead.
 		world:set(entity, c.timer, {

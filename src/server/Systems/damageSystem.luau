@@ -1,3 +1,15 @@
+--[[
+	Hazard overlap → c.damage on victims. Runs in Update before healthSystem (PostUpdate).
+
+	Each source queries its hitbox once per frame; per-victim cooldown is pair(c.damage_cooldown, source).
+]]
+
+-- TODO: Implement optimizations!
+--[[
+Right now we do "GetPartsInPart" which if we have an open-world and many damageSources we will
+definitely encounter some lag.
+]]
+
 local Players = game:GetService("Players")
 
 local c = require("@Shared/components")
@@ -11,7 +23,6 @@ local pair = jecs.pair
 local overlapParams = OverlapParams.new()
 overlapParams.FilterType = Enum.RaycastFilterType.Exclude
 
--- Reuse query matching across frames instead of rebuilding it every tick.
 local q_damage_sources = world:query(c.damage_source):cached()
 
 local function getPlayerEntityFromPart(part: BasePart): jecs.Entity<any>?
@@ -33,13 +44,8 @@ local function canTakeDamage(entity: jecs.Entity<any>): boolean
 end
 
 --[[
-	Hazard hit cooldown lives on the VICTIM, not the hazard.
-
-	Each successful hit writes pair(c.damage_cooldown, sourceEntity) on the victim with an
-	expiry timestamp (os.clock). Until that time passes, the same hazard cannot
-	apply another c.damage event to that victim.
-
-	source.delay (on the hazard) is the config: "wait this many seconds between ticks."
+	Cooldown is stored on the victim as pair(c.damage_cooldown, sourceEntity) → expiry time.
+	source.delay is seconds between ticks for that hazard.
 ]]
 local function tryApplyHit(
 	victimEntity: jecs.Entity<any>,
@@ -52,9 +58,9 @@ local function tryApplyHit(
 
 	if expiresAt then
 		if now < expiresAt then
-			return false -- still on cooldown for this hazard
+			return false
 		end
-		world:remove(victimEntity, hitCooldown) -- expired; drop the stale pair
+		world:remove(victimEntity, hitCooldown)
 	end
 
 	world:set(victimEntity, hitCooldown, now + source.delay)

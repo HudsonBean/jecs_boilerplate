@@ -1,4 +1,6 @@
-export type QuestState = "inactive" | "active" | "completed"
+local QuestTypes = require("@Shared/types/quest")
+
+export type QuestState = QuestTypes.QuestState
 
 export type DialogueChoice = {
 	label: string,

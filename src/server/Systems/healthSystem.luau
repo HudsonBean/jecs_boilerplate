@@ -1,3 +1,10 @@
+--[[
+	Reads c.damage (written by damageSystem), applies it to c.health, runs regen.
+
+	Regen uses scheduleDelay + local maps because regen timing is per-entity state
+	that does not need to replicate or appear in queries.
+]]
+
 local c = require("@Shared/components")
 local jecs = require("@Packages/jecs")
 local planckRunService = require("@Packages/planck-runservice")

@@ -1,8 +1,15 @@
 local CollectionService = game:GetService("CollectionService")
 local ServerStorage = game:GetService("ServerStorage")
 
+--[[
+	NPC world instances. Two entry points:
+	- CollectionService tags at boot (attachComponents)
+	- spawnNpc via spawnSystem (CLI tickets or future respawn on existing entity)
+]]
+
 local c = require("@Shared/components")
 local jecs = require("@Packages/jecs")
+local SpawnOptionsTypes = require("@Shared/types/spawn_options")
 local npc_configs = require("@Server/Configs/npc_configs")
 local ref = require("@Shared/utils/ecs/ref")
 local replicator = require("@Shared/replicator").server
@@ -10,10 +17,13 @@ local world = require("@Shared/world")
 
 local TAG = "npc"
 
-export type SpawnNpcOptions = {
-	position: Vector3?,
-	cframe: CFrame?,
-}
+export type SpawnNpcOptions = SpawnOptionsTypes.SpawnOptions
+
+export type SpawnNpcFn = (
+	npcId: string,
+	options: SpawnNpcOptions | Vector3 | nil,
+	existingEntity: jecs.Entity<any>?
+) -> jecs.Entity<any>?
 
 local function getModelFolder(): Folder?
 	return ServerStorage:FindFirstChild("NpcModels") :: Folder?
@@ -82,8 +92,7 @@ local function attachComponentsToCharacter(character: Model, npcId: string): jec
 	end
 
 	return ref(character, function(entity)
-		world:add(entity, c.npc)
-		world:set(entity, c.npc_id, npcId)
+		world:set(entity, c.npc, npcId)
 		world:set(entity, c.character, character)
 		replicator:set_reliable(entity, c.health)
 		world:set(entity, c.health, buildHealth(config))
@@ -99,6 +108,44 @@ local function attachComponentsToCharacter(character: Model, npcId: string): jec
 			end
 		end)
 	end)
+end
+
+-- Reuses a persistent NPC entity (spawnSystem respawn). Character ref maps to the same entity.
+local function attachComponentsToExistingEntity(
+	existingEntity: jecs.Entity<any>,
+	character: Model,
+	npcId: string
+): jecs.Entity<any>?
+	local config = npc_configs.get(npcId)
+	if not config then
+		warn("[npc prefab] unknown npc_id:", npcId)
+		return nil
+	end
+
+	ref.set(character, existingEntity)
+	world:set(existingEntity, c.npc, npcId)
+	world:set(existingEntity, c.character, character)
+
+	if not world:has(existingEntity, c.health) then
+		replicator:set_reliable(existingEntity, c.health)
+	end
+
+	world:set(existingEntity, c.health, buildHealth(config))
+
+	if config.hostile then
+		world:add(existingEntity, c.hostile)
+	else
+		world:remove(existingEntity, c.hostile)
+	end
+
+	world:set(existingEntity, c.cleanup, function()
+		ref.unlist(character)
+		if character.Parent then
+			character:Destroy()
+		end
+	end)
+
+	return existingEntity
 end
 
 local function attachComponents(instance: Instance): jecs.Entity<any>?
@@ -136,7 +183,11 @@ local function attachComponents(instance: Instance): jecs.Entity<any>?
 	return entity
 end
 
-local function spawnNpc(npcId: string, options: SpawnNpcOptions | Vector3 | nil): jecs.Entity<any>?
+local function spawnNpc(
+	npcId: string,
+	options: SpawnNpcOptions | Vector3 | nil,
+	existingEntity: jecs.Entity<any>?
+): jecs.Entity<any>?
 	local config = npc_configs.get(npcId)
 	if not config then
 		warn("[npc prefab] unknown npc_id:", npcId)
@@ -151,6 +202,10 @@ local function spawnNpc(npcId: string, options: SpawnNpcOptions | Vector3 | nil)
 	local character = loadCharacterModel(config, targetCFrame)
 	if not character then
 		return nil
+	end
+
+	if existingEntity then
+		return attachComponentsToExistingEntity(existingEntity, character, npcId)
 	end
 
 	return attachComponentsToCharacter(character, npcId)
@@ -171,4 +226,4 @@ CollectionService:GetInstanceRemovedSignal(TAG):Connect(function(instance: Insta
 	world:delete(entity)
 end)
 
-return spawnNpc
+return spawnNpc :: SpawnNpcFn

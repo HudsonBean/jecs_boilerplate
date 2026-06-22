@@ -1,13 +1,21 @@
+--[[
+	Watches c.dead and, after a delay, clears dead + queues pair(c.spawn_request, entity).
+
+	Does not spawn directly — spawnSystem picks up the relation on the next PostUpdate.
+]]
+
 local c = require("@Shared/components")
 local jecs = require("@Packages/jecs")
 local planckRunService = require("@Packages/planck-runservice")
 local scheduleDelay = require("@Shared/utils/scheduleDelay")
-local spawnPlayer = require("@Server/Prefabs/player")
 local world = require("@Shared/world")
+
+local pair = jecs.pair
 
 local RESPAWN_DELAY = 5 -- TODO: Per-game-mode or per-spawn-point config
 
 local q_dead = world:query(c.dead):cached()
+-- Maps dead entity → one-shot timer entity (see scheduleDelay).
 local respawnTimers: { [jecs.Entity<any>]: jecs.Entity<any> } = {}
 
 local function cancelRespawnTimer(entity: jecs.Entity<any>)
@@ -34,7 +42,6 @@ local function respawnSystem()
 			continue
 		end
 
-		-- Throwaway timer entity; player entities already own a repeating c.timer (unix demo).
 		respawnTimers[entity] = scheduleDelay(RESPAWN_DELAY, function()
 			respawnTimers[entity] = nil
 
@@ -43,12 +50,7 @@ local function respawnSystem()
 			end
 
 			world:remove(entity, c.dead)
-
-			local player = world:get(entity, c.player)
-			if player then
-				spawnPlayer(player)
-			end
-			-- TODO: NPC respawn via a dedicated NPC prefab when added
+			world:add(entity, pair(c.spawn_request, entity))
 		end)
 	end
 end

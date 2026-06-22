@@ -6,7 +6,7 @@ export type NpcHealthConfig = {
 	regen_delay: number?,
 }
 
--- Static NPC definitions. Runtime NPC entities store npc_id and look up here.
+-- Static NPC definitions. Runtime NPC entities store c.npc (config id) and look up here.
 export type NpcConfig = {
 	model: string, -- Model name under ServerStorage.NpcModels
 	health: NpcHealthConfig,
