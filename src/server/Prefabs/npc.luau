@@ -16,6 +16,7 @@ local replicator = require("@Shared/replicator").server
 local world = require("@Shared/world")
 
 local TAG = "npc"
+local NPCS_FOLDER_NAME = "Npcs"
 
 export type SpawnNpcOptions = SpawnOptionsTypes.SpawnOptions
 
@@ -27,6 +28,19 @@ export type SpawnNpcFn = (
 
 local function getModelFolder(): Folder?
 	return ServerStorage:FindFirstChild("NpcModels") :: Folder?
+end
+
+local function getNpcsFolder(): Folder
+	local folder = workspace:FindFirstChild(NPCS_FOLDER_NAME)
+	if folder and folder:IsA("Folder") then
+		return folder
+	end
+
+	folder = Instance.new("Folder")
+	folder.Name = NPCS_FOLDER_NAME
+	folder.Parent = workspace
+
+	return folder
 end
 
 local function resolveTargetCFrame(options: SpawnNpcOptions?): CFrame
@@ -79,7 +93,7 @@ local function loadCharacterModel(config: npc_configs.NpcConfig, targetCFrame: C
 
 	local character = template:Clone()
 	character:PivotTo(targetCFrame)
-	character.Parent = workspace
+	character.Parent = getNpcsFolder()
 
 	return character
 end

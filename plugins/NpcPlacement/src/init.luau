@@ -12,6 +12,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local TAG = "npc"
 local NPC_ID_ATTRIBUTE = "npc_id"
 local MODELS_FOLDER_NAME = "NpcModels"
+local NPCS_FOLDER_NAME = "Npcs"
 local DEFAULT_PREFAB_NAME = "_default"
 local CAMERA_PLACEMENT_DISTANCE = 12
 local SURFACE_RAY_HEIGHT = 10000
@@ -34,15 +35,7 @@ local toggleButton = toolbar:CreateButton(
 	"rbxassetid://6034509993"
 )
 
-local widgetInfo = DockWidgetPluginGuiInfo.new(
-	Enum.InitialDockState.Float,
-	false,
-	false,
-	320,
-	260,
-	280,
-	220
-)
+local widgetInfo = DockWidgetPluginGuiInfo.new(Enum.InitialDockState.Float, false, false, 320, 260, 280, 220)
 
 local widget = plugin:CreateDockWidgetPluginGui("RpgNpcPlacement", widgetInfo)
 widget.Title = "NPC Placement"
@@ -80,10 +73,7 @@ local function createLabel(text: string, order: number): TextLabel
 	return label
 end
 
-local title = createLabel(
-	"Insert prefab, Set NPC, then use Undo Last if you picked the wrong model.",
-	1
-)
+local title = createLabel("Insert prefab, Set NPC, then use Undo Last if you picked the wrong model.", 1)
 title.TextSize = 14
 title.TextColor3 = Color3.fromRGB(220, 220, 220)
 
@@ -153,6 +143,19 @@ local function getModelsFolder(): Folder?
 	return ServerStorage:FindFirstChild(MODELS_FOLDER_NAME) :: Folder?
 end
 
+local function getNpcsFolder(): Folder
+	local folder = workspace:FindFirstChild(NPCS_FOLDER_NAME)
+	if folder and folder:IsA("Folder") then
+		return folder
+	end
+
+	folder = Instance.new("Folder")
+	folder.Name = NPCS_FOLDER_NAME
+	folder.Parent = workspace
+
+	return folder
+end
+
 local function getDefaultPrefabTemplate(): Model?
 	local modelsFolder = getModelsFolder()
 	if not modelsFolder then
@@ -213,9 +216,7 @@ local function refreshUndoButton()
 	local canUndo = lastUndoBatch ~= nil and #lastUndoBatch > 0
 	undoButton.Active = canUndo
 	undoButton.AutoButtonColor = canUndo
-	undoButton.BackgroundColor3 = if canUndo
-		then Color3.fromRGB(80, 80, 80)
-		else Color3.fromRGB(45, 45, 45)
+	undoButton.BackgroundColor3 = if canUndo then Color3.fromRGB(80, 80, 80) else Color3.fromRGB(45, 45, 45)
 end
 
 local function getNpcModelNames(): { string }
@@ -259,11 +260,8 @@ local function levenshteinDistance(left: string, right: string): number
 
 		for column = 1, rightLength do
 			local substitutionCost = if leftChar == string.byte(right, column) then 0 else 1
-			currentRow[column + 1] = math.min(
-				currentRow[column] + 1,
-				previousRow[column + 1] + 1,
-				previousRow[column] + substitutionCost
-			)
+			currentRow[column + 1] =
+				math.min(currentRow[column] + 1, previousRow[column + 1] + 1, previousRow[column] + substitutionCost)
 		end
 
 		previousRow, currentRow = currentRow, previousRow
@@ -429,8 +427,7 @@ local function getCameraPlacementCFrame(): CFrame?
 
 	local cameraCFrame = camera.CFrame
 	local placementPosition = cameraCFrame.Position + (cameraCFrame.LookVector * CAMERA_PLACEMENT_DISTANCE)
-	local flatLookTarget =
-		Vector3.new(cameraCFrame.Position.X, placementPosition.Y, cameraCFrame.Position.Z)
+	local flatLookTarget = Vector3.new(cameraCFrame.Position.X, placementPosition.Y, cameraCFrame.Position.Z)
 
 	if (flatLookTarget - placementPosition).Magnitude < 0.001 then
 		local flatForward = Vector3.new(-cameraCFrame.LookVector.X, 0, -cameraCFrame.LookVector.Z)
@@ -514,24 +511,22 @@ local function setNpcOnModel(sourceModel: Model, npcName: string): (Model?, Undo
 	end
 
 	local undoEntry: UndoEntry = {
-		parent = sourceModel.Parent or workspace,
+		parent = getNpcsFolder(),
 		cframe = getModelPivot(sourceModel),
 		kind = if isPlacementPrefab(sourceModel) then "prefab" else "npc",
-		npcId = if isPlacementPrefab(sourceModel)
-			then nil
-			else (sourceModel:GetAttribute(NPC_ID_ATTRIBUTE) :: string?),
+		npcId = if isPlacementPrefab(sourceModel) then nil else sourceModel:GetAttribute(NPC_ID_ATTRIBUTE) :: string?,
 		createdModel = nil :: any,
 	}
 
 	local targetCFrame = undoEntry.cframe
-	local parent = undoEntry.parent
+	local npcsFolder = undoEntry.parent
 
 	local npcModel = template:Clone()
 	npcModel.Name = npcName
 	npcModel:PivotTo(targetCFrame)
 	npcModel:SetAttribute(NPC_ID_ATTRIBUTE, npcName)
 	CollectionService:AddTag(npcModel, TAG)
-	npcModel.Parent = parent
+	npcModel.Parent = npcsFolder
 
 	sourceModel:Destroy()
 
@@ -542,9 +537,7 @@ end
 
 local function setStatus(message: string, isError: boolean?)
 	statusLabel.Text = message
-	statusLabel.TextColor3 = if isError
-		then Color3.fromRGB(255, 160, 160)
-		else Color3.fromRGB(180, 220, 180)
+	statusLabel.TextColor3 = if isError then Color3.fromRGB(255, 160, 160) else Color3.fromRGB(180, 220, 180)
 end
 
 local function onUndoLastClicked()
@@ -592,7 +585,7 @@ local function insertDefaultPrefab(): Model?
 	local prefab = template:Clone()
 	prefab.Name = "npc"
 	stripNpcMetadata(prefab)
-	prefab.Parent = workspace
+	prefab.Parent = getNpcsFolder()
 	placeModelInFrontOfCamera(prefab)
 
 	ChangeHistoryService:SetWaypoint("After Insert NPC Prefab")
