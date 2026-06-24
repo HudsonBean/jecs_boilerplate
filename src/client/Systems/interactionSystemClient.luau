@@ -1,37 +1,23 @@
+--[[
+	Client interaction discovery only. ProximityPrompt visibility drives c.interactable_in_range
+	for local UX; the server validates PromptTriggered and writes c.interact_request.
+]]
+
 local CollectionService = game:GetService("CollectionService")
-local Players = game:GetService("Players")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local c = require("@Shared/components")
-local jecs = require("@Packages/jecs")
+local interactable = require("@Shared/utils/interactable")
 local planckRunService = require("@Packages/planck-runservice")
-local clearRelation = require("@Shared/utils/ecs/clearRelation")
 local ref = require("@Shared/utils/ecs/ref")
 local world = require("@Shared/world")
 
-local pair = jecs.pair
-
-local TAG = "interactable"
+local TAG = interactable.TAG
 
 local inRangeQueue: { Instance } = {}
 local outOfRangeQueue: { Instance } = {}
-local interactRequestQueue: { Instance } = {}
 
-local function resolveInteractableRoot(from: Instance): Instance?
-	local current: Instance? = from
-
-	while current do
-		if CollectionService:HasTag(current, TAG) then
-			return current
-		end
-
-		current = current.Parent
-	end
-
-	return nil
-end
-
-local function resolveInteractableEntity(from: Instance): jecs.Entity<any>?
-	local root = resolveInteractableRoot(from)
+local function resolveInteractableEntity(from: Instance)
+	local root = interactable.resolveRoot(from)
 	if not root then
 		return nil
 	end
@@ -97,27 +83,8 @@ local function interactionSystemClient()
 		end
 	end
 
-	local player = Players.LocalPlayer
-	local playerEntity = ref.search(player)
-	if playerEntity then
-		for _, instance in interactRequestQueue do
-			local targetEntity = resolveInteractableEntity(instance)
-			if not targetEntity then
-				continue
-			end
-
-			if not world:has(targetEntity, c.interactable_in_range) then
-				continue
-			end
-
-			clearRelation(playerEntity, c.interact_request)
-			world:add(playerEntity, pair(c.interact_request, targetEntity))
-		end
-	end
-
 	table.clear(inRangeQueue)
 	table.clear(outOfRangeQueue)
-	table.clear(interactRequestQueue)
 end
 
 for _, instance in CollectionService:GetTagged(TAG) do
@@ -140,14 +107,14 @@ CollectionService:GetInstanceRemovedSignal(TAG):Connect(function(instance: Insta
 end)
 
 ProximityPromptService.PromptShown:Connect(function(prompt: ProximityPrompt)
-	local root = if prompt.Parent then resolveInteractableRoot(prompt.Parent) else nil
+	local root = if prompt.Parent then interactable.resolveRoot(prompt.Parent) else nil
 	if root then
 		enqueueUnique(inRangeQueue, root)
 	end
 end)
 
 ProximityPromptService.PromptHidden:Connect(function(prompt: ProximityPrompt)
-	local root = if prompt.Parent then resolveInteractableRoot(prompt.Parent) else nil
+	local root = if prompt.Parent then interactable.resolveRoot(prompt.Parent) else nil
 	if not root then
 		return
 	end
@@ -158,17 +125,6 @@ ProximityPromptService.PromptHidden:Connect(function(prompt: ProximityPrompt)
 	end
 
 	enqueueUnique(outOfRangeQueue, root)
-end)
-
-ProximityPromptService.PromptTriggered:Connect(function(prompt: ProximityPrompt, player: Player)
-	if player ~= Players.LocalPlayer then
-		return
-	end
-
-	local root = if prompt.Parent then resolveInteractableRoot(prompt.Parent) else nil
-	if root then
-		enqueueUnique(interactRequestQueue, root)
-	end
 end)
 
 return {

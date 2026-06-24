@@ -78,7 +78,7 @@ add_shared(components, {
 	-- Client-local interaction discovery; server validates PromptTriggered separately.
 	interactable = true,
 	interactable_in_range = true,
-	-- Server-only intent consumed by interactionSystemServer.
+	-- Server-only intent: interactionSystemServer writes; dialogueSystem consumes.
 	interact_request = true,
 })
 
