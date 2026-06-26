@@ -7,9 +7,9 @@ local ServerStorage = game:GetService("ServerStorage")
 	- spawnNpc via spawnSystem (CLI tickets or future respawn on existing entity)
 ]]
 
+local SpawnOptionsTypes = require("@Shared/types/spawn_options")
 local c = require("@Shared/components")
 local jecs = require("@Packages/jecs")
-local SpawnOptionsTypes = require("@Shared/types/spawn_options")
 local npc_configs = require("@Server/Configs/npc_configs")
 local replicator = require("@Shared/replicator").server
 local world = require("@Shared/world")

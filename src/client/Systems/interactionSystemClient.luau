@@ -1,6 +1,6 @@
 --[[
-	Client interaction discovery only. ProximityPrompt visibility drives c.interactable_in_range
-	for local UX; the server validates PromptTriggered and writes c.interact_request.
+	Client interaction discovery only. Replicated ProximityPrompt visibility drives
+	c.interactable_in_range for local UX; the server owns prompts and interact_request.
 ]]
 
 local CollectionService = game:GetService("CollectionService")
@@ -11,7 +11,6 @@ local planckRunService = require("@Packages/planck-runservice")
 local world = require("@Shared/world")
 
 local ref = c.ref
-local TAG = interactable.TAG
 
 local inRangeQueue: { Instance } = {}
 local outOfRangeQueue: { Instance } = {}
@@ -22,10 +21,20 @@ local function resolveInteractableEntity(from: Instance)
 		return nil
 	end
 
+	if not CollectionService:HasTag(root, interactable.TAG) then
+		return nil
+	end
+
 	return ref.search(root)
 end
 
-local function attachComponents(instance: Instance)
+local function bindInteractable(instance: Instance)
+	local existingEntity = ref.search(instance)
+	if existingEntity then
+		world:add(existingEntity, c.interactable)
+		return
+	end
+
 	ref(instance, function(entity)
 		world:add(entity, c.interactable)
 
@@ -35,13 +44,18 @@ local function attachComponents(instance: Instance)
 	end)
 end
 
-local function ensureProximityPrompt(instance: Instance)
-	if instance:FindFirstChildOfClass("ProximityPrompt") then
+local function unbindInteractable(instance: Instance)
+	local entity = ref.search(instance)
+	if not entity then
 		return
 	end
 
-	local prompt = Instance.new("ProximityPrompt")
-	prompt.Parent = instance
+	if world:has(entity, c.interactable_in_range) then
+		world:remove(entity, c.interactable_in_range)
+	end
+
+	world:remove(entity, c.interactable)
+	world:delete(entity)
 end
 
 local function enqueueUnique(queue: { Instance }, instance: Instance)
@@ -87,35 +101,23 @@ local function interactionSystemClient()
 	table.clear(outOfRangeQueue)
 end
 
-for _, instance in CollectionService:GetTagged(TAG) do
-	ensureProximityPrompt(instance)
-	attachComponents(instance)
+for _, instance in CollectionService:GetTagged(interactable.TAG) do
+	bindInteractable(instance)
 end
 
-CollectionService:GetInstanceAddedSignal(TAG):Connect(function(instance: Instance)
-	ensureProximityPrompt(instance)
-	attachComponents(instance)
-end)
-
-CollectionService:GetInstanceRemovedSignal(TAG):Connect(function(instance: Instance)
-	local entity = ref.search(instance)
-	if not entity then
-		return
-	end
-
-	world:delete(entity)
-end)
+CollectionService:GetInstanceAddedSignal(interactable.TAG):Connect(bindInteractable)
+CollectionService:GetInstanceRemovedSignal(interactable.TAG):Connect(unbindInteractable)
 
 ProximityPromptService.PromptShown:Connect(function(prompt: ProximityPrompt)
 	local root = if prompt.Parent then interactable.resolveRoot(prompt.Parent) else nil
-	if root then
+	if root and CollectionService:HasTag(root, interactable.TAG) then
 		enqueueUnique(inRangeQueue, root)
 	end
 end)
 
 ProximityPromptService.PromptHidden:Connect(function(prompt: ProximityPrompt)
 	local root = if prompt.Parent then interactable.resolveRoot(prompt.Parent) else nil
-	if not root then
+	if not root or not CollectionService:HasTag(root, interactable.TAG) then
 		return
 	end
 

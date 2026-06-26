@@ -32,6 +32,22 @@ function interactable.getPosition(root: Instance): Vector3?
 	return nil
 end
 
+function interactable.ensureProximityPrompt(instance: Instance)
+	if instance:FindFirstChildOfClass("ProximityPrompt") then
+		return
+	end
+
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.Parent = instance
+end
+
+function interactable.removeProximityPrompt(instance: Instance)
+	local prompt = instance:FindFirstChildOfClass("ProximityPrompt")
+	if prompt then
+		prompt:Destroy()
+	end
+end
+
 -- Slight buffer for replication latency and character hitbox vs prompt origin.
 function interactable.isWithinPromptRange(player: Player, prompt: ProximityPrompt, root: Instance): boolean
 	local character = player.Character
