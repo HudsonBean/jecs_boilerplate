@@ -7,14 +7,13 @@
 
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local c = require("@Shared/components")
+local interactable = require("@Shared/interactable")
 local jecs = require("@Packages/jecs")
 local planckRunService = require("@Packages/planck-runservice")
-local clearRelation = require("@Shared/utils/ecs/clearRelation")
-local interactable = require("@Shared/utils/interactable")
-local ref = require("@Shared/utils/ecs/ref")
 local world = require("@Shared/world")
 
 local pair = jecs.pair
+local ref = c.ref
 
 type InteractTrigger = {
 	player: Player,
@@ -23,6 +22,17 @@ type InteractTrigger = {
 }
 
 local interactRequestQueue: { InteractTrigger } = {}
+
+local function clearRelation(entity: jecs.Entity<any>, relation: jecs.Entity<any>)
+	local index = 0
+	while true do
+		local target = world:target(entity, relation, index)
+		if not target then
+			break
+		end
+		world:remove(entity, pair(relation, target))
+	end
+end
 
 local function resolveTargetEntity(root: Instance): jecs.Entity<any>?
 	local entity = ref.search(root)

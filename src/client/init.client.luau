@@ -1,20 +1,18 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+
 local net = require("@Client/Networking/client")
 local scheduler = require("@Shared/scheduler")
 local replicator = require("@Shared/replicator").client
-local bootstrapPrefabs = require("@Shared/utils/bootstrapPrefabs")
+local c = require("@Shared/components")
 local jabby = require("@Packages/jabby")
-local players = require("@Shared/players")
 local world = require("@Shared/world")
-local userInputService = game:GetService("UserInputService")
 
--- Bootstrap client prefabs only (when Client/Prefabs exists)
-bootstrapPrefabs(script.Parent)
+local ref = c.ref
 
--- Replecs: start replication and request the initial full state
 replicator:init()
 local buf, variants = net.ReceiveFull.Invoke(nil)
 
--- Planck: schedule systems
 local systemsOrder = {
 	require("@Client/Systems/interactionSystemClient"),
 	require("@Client/Systems/replecsClient"),
@@ -22,7 +20,6 @@ local systemsOrder = {
 
 scheduler:addSystems(systemsOrder)
 
--- Jabby: expose the client world and open the debugger with F4
 local client = jabby.obtain_client()
 
 jabby.register({
@@ -31,7 +28,7 @@ jabby.register({
 	configuration = { world = world :: any },
 })
 
-userInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: boolean)
+UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: boolean)
 	if gameProcessed then
 		return
 	end
@@ -40,9 +37,31 @@ userInputService.InputBegan:Connect(function(input: InputObject, gameProcessed: 
 	end
 end)
 
--- Bootstrap players, then apply the initial replicated snapshot
-players.start_current_players()
-players.listen_for_players()
+local function setupPlayer(player: Player)
+	local entity = ref(player)
+	world:set(entity, c.player, player)
+
+	for _, callback in world:query(c.player_setup):iter() do
+		callback(player, entity)
+	end
+end
+
+local function cleanupPlayer(player: Player)
+	local entity = ref.search(player)
+	if not entity then
+		return
+	end
+
+	world:delete(entity)
+	ref.unlist(player)
+end
+
+for _, player in Players:GetPlayers() do
+	setupPlayer(player)
+end
+
+Players.PlayerAdded:Connect(setupPlayer)
+Players.PlayerRemoving:Connect(cleanupPlayer)
 
 if buf then
 	replicator:apply_full(buf, variants)

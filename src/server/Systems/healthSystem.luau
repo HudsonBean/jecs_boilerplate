@@ -8,10 +8,22 @@
 local c = require("@Shared/components")
 local jecs = require("@Packages/jecs")
 local planckRunService = require("@Packages/planck-runservice")
-local scheduleDelay = require("@Shared/utils/scheduleDelay")
 local world = require("@Shared/world")
 
 local REGEN_TICK_INTERVAL = 1
+
+local function scheduleDelay(wait: number, onComplete: () -> ()): jecs.Entity<any>
+	local timerEntity = world:entity()
+	world:set(timerEntity, c.timer, {
+		start = os.clock(),
+		wait = wait,
+		repeats = false,
+		callback = function(_entity: jecs.Entity<any>)
+			task.defer(onComplete)
+		end,
+	})
+	return timerEntity
+end
 
 local q_health = world:query(c.health):cached()
 local regenTimers: { [jecs.Entity<any>]: jecs.Entity<any> } = {}

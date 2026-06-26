@@ -8,8 +8,9 @@ local CollectionService = game:GetService("CollectionService")
 
 local c = require("@Shared/components")
 local jecs = require("@Packages/jecs")
-local ref = require("@Shared/utils/ecs/ref")
 local world = require("@Shared/world")
+
+local ref = c.ref
 
 local TAG = "damage_source"
 

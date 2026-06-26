@@ -6,11 +6,24 @@
 ]]
 
 local c = require("@Shared/components")
-local clearRelation = require("@Shared/utils/ecs/clearRelation")
+local jecs = require("@Packages/jecs")
 local planckRunService = require("@Packages/planck-runservice")
 local world = require("@Shared/world")
 
+local pair = jecs.pair
+
 local q_health = world:query(c.health):cached()
+
+local function clearRelation(entity: jecs.Entity<any>, relation: jecs.Entity<any>)
+	local index = 0
+	while true do
+		local target = world:target(entity, relation, index)
+		if not target then
+			break
+		end
+		world:remove(entity, pair(relation, target))
+	end
+end
 
 local function cleanupCharacter(entity)
 	if world:has(entity, c.character) then

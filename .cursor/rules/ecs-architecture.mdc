@@ -1,0 +1,38 @@
+---
+description: ECS architecture — components, systems, prefabs only
+globs: src/**/*.luau
+alwaysApply: true
+---
+
+# ECS architecture
+
+## Layers
+
+- **Components** — [`src/shared/components.luau`](src/shared/components.luau): all ECS component definitions, ref map (`c.ref`), shared/replecs tags
+- **Systems** — `src/*/Systems/*.luau`: singletons that read/write **world + components only**
+- **Prefabs** — `src/server/Prefabs/*.luau`: spawn/load logic; **only [`spawnSystem`](src/server/Systems/spawnSystem.luau) may `require` prefabs**
+
+## Systems
+
+- Never `require` another system module
+- Coordinate through ECS components (e.g. `respawnSystem` writes `spawn_request`, `spawnSystem` consumes it)
+- No prefab imports except in `spawnSystem`
+
+## Shared modules
+
+Avoid small single-purpose helper scripts. A separate shared module is allowed only when:
+
+1. **Both client and server need it** (e.g. [`interactable.luau`](src/shared/interactable.luau)), or
+2. It is a large shared library (500+ lines, many exports)
+
+Otherwise inline logic into the system that uses it.
+
+## Infrastructure (minimal)
+
+- [`world.luau`](src/shared/world.luau), [`scheduler.luau`](src/shared/scheduler.luau), [`replicator.luau`](src/shared/replicator.luau) — thin bootstrap glue
+- [`init.server.luau`](src/server/init.server.luau) / [`init.client.luau`](src/client/init.client.luau) — player join/leave wiring
+- [`Configs/`](src/server/Configs/) — static server data tables read by systems
+
+## Types
+
+Pure types live in [`src/shared/types/`](src/shared/types/) and are re-exported from `components.luau`. Systems use `c.HealthInterface` etc.

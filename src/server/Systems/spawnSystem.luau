@@ -5,12 +5,13 @@
 	work runs in task.defer after this tick collects and clears requests.
 ]]
 
+require("@Server/Prefabs/damageSource")
+local spawnNpc = require("@Server/Prefabs/npc")
+local spawnPlayer = require("@Server/Prefabs/player")
+
 local c = require("@Shared/components")
 local jecs = require("@Packages/jecs")
 local planckRunService = require("@Packages/planck-runservice")
-local clearRelation = require("@Shared/utils/ecs/clearRelation")
-local spawnNpc = require("@Server/Prefabs/npc")
-local spawnPlayer = require("@Server/Prefabs/player")
 local world = require("@Shared/world")
 
 local pair = jecs.pair
@@ -22,6 +23,17 @@ type SpawnJob =
 	| { kind: "npc_respawn", entity: jecs.Entity<any>, npcId: string, options: c.SpawnOptionsInterface? }
 
 local q_spawn_requests = world:query(pair(c.spawn_request, Wildcard)):cached()
+
+local function clearRelation(entity: jecs.Entity<any>, relation: jecs.Entity<any>)
+	local index = 0
+	while true do
+		local target = world:target(entity, relation, index)
+		if not target then
+			break
+		end
+		world:remove(entity, pair(relation, target))
+	end
+end
 
 local function getSpawnOptions(entity: jecs.Entity<any>): c.SpawnOptionsInterface?
 	if world:has(entity, c.spawn_options) then

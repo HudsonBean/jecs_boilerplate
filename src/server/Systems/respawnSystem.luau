@@ -7,12 +7,24 @@
 local c = require("@Shared/components")
 local jecs = require("@Packages/jecs")
 local planckRunService = require("@Packages/planck-runservice")
-local scheduleDelay = require("@Shared/utils/scheduleDelay")
 local world = require("@Shared/world")
 
 local pair = jecs.pair
 
 local RESPAWN_DELAY = 5 -- TODO: Per-game-mode or per-spawn-point config
+
+local function scheduleDelay(wait: number, onComplete: () -> ()): jecs.Entity<any>
+	local timerEntity = world:entity()
+	world:set(timerEntity, c.timer, {
+		start = os.clock(),
+		wait = wait,
+		repeats = false,
+		callback = function(_entity: jecs.Entity<any>)
+			task.defer(onComplete)
+		end,
+	})
+	return timerEntity
+end
 
 local q_dead = world:query(c.dead):cached()
 -- Maps dead entity → one-shot timer entity (see scheduleDelay).

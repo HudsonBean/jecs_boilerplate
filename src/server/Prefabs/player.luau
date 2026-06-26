@@ -3,9 +3,10 @@ local Players = game:GetService("Players")
 local c = require("@Shared/components")
 local jecs = require("@Packages/jecs")
 local SpawnOptionsTypes = require("@Shared/types/spawn_options")
-local ref = require("@Shared/utils/ecs/ref")
 local replicator = require("@Shared/replicator").server
 local world = require("@Shared/world")
+
+local ref = c.ref
 
 Players.CharacterAutoLoads = false
 

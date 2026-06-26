@@ -3,9 +3,25 @@
 ]]
 
 local replicator = require("@Shared/replicator").server
-local interval = require("@Shared/utils/interval")
 local net = require("@Server/Networking/server")
 local planckRunService = require("@Packages/planck-runservice")
+
+local function interval(seconds: number)
+	local pin: number? = nil
+
+	return function()
+		if not pin then
+			pin = os.clock()
+		end
+
+		local elapsed = os.clock() - pin > seconds
+		if elapsed then
+			pin = os.clock()
+		end
+
+		return elapsed
+	end
+end
 
 local updates_interval = interval(1 / 20)
 local unreliable_interval = interval(1 / 30)

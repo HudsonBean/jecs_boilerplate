@@ -6,11 +6,11 @@
 local CollectionService = game:GetService("CollectionService")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local c = require("@Shared/components")
-local interactable = require("@Shared/utils/interactable")
+local interactable = require("@Shared/interactable")
 local planckRunService = require("@Packages/planck-runservice")
-local ref = require("@Shared/utils/ecs/ref")
 local world = require("@Shared/world")
 
+local ref = c.ref
 local TAG = interactable.TAG
 
 local inRangeQueue: { Instance } = {}

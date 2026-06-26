@@ -3,10 +3,7 @@ local HealthTypes = require("@Shared/types/health")
 local QuestTypes = require("@Shared/types/quest")
 local SpawnOptionsTypes = require("@Shared/types/spawn_options")
 local TimerTypes = require("@Shared/types/timer")
-local add_names = require("@Shared/utils/ecs/add_names")
-local add_shared = require("@Shared/utils/ecs/add_shared")
 local jecs = require("@Packages/jecs")
-local ref = require("@Shared/utils/ecs/ref")
 local replecs = require("@Packages/replecs")
 local world = require("@Shared/world")
 
@@ -20,6 +17,59 @@ export type QuestState = QuestTypes.QuestState
 export type QuestProgress = QuestTypes.QuestProgress
 export type QuestStateInterface = QuestTypes.QuestStateInterface
 export type QuestObjectiveReportInterface = QuestTypes.QuestObjectiveReport
+
+local refs: { [any]: any } = {}
+
+local function ref(key: any, initer: ((entity: jecs.Entity<any>) -> ())?): jecs.Entity<any>
+	if not key then
+		return world:entity()
+	end
+
+	local entity = refs[key]
+	if not entity then
+		entity = world:entity()
+
+		if initer then
+			initer(entity)
+		end
+
+		refs[key] = entity
+	end
+
+	return entity
+end
+
+local function __call(_, key: any, initer: (entity: jecs.Entity<any>) -> ())
+	return ref(key, initer)
+end
+
+local function search(key: any)
+	if not key then
+		return nil
+	end
+
+	return refs[key]
+end
+
+local function set(key: any, entity: jecs.Entity<any>)
+	refs[key] = entity
+end
+
+local function unlist(key: any)
+	if not key then
+		return
+	end
+
+	refs[key] = nil
+end
+
+local REF = (setmetatable({
+	set = set,
+	search = search,
+	unlist = unlist,
+}, {
+	__call = __call,
+}) :: any) :: typeof(ref) & { set: typeof(set), search: typeof(search), unlist: typeof(unlist) }
 
 local components = {
 	player = world:component() :: jecs.Entity<Player>,
@@ -56,7 +106,7 @@ local components = {
 	interactable = world:entity(),
 	-- Client-local: ProximityPrompt visible / within interact distance.
 	interactable_in_range = world:entity(),
-	-- pair(c.interact_request, target) on player: one-shot client intent; server validates range.
+	-- pair(c.interact_request, target) on player: server validates PromptTriggered, then writes intent.
 	interact_request = world:entity(),
 }
 
@@ -73,13 +123,14 @@ world:removed(components.cleanup, function(entity: jecs.Entity<any>)
 	end
 end)
 
-add_names(components)
-add_shared(components, {
-	-- Client-local interaction discovery; server validates PromptTriggered separately.
-	interactable = true,
-	interactable_in_range = true,
-	-- Server-only intent: interactionSystemServer writes; dialogueSystem consumes.
-	interact_request = true,
-})
+for name, entity in pairs(components :: any) do
+	world:set(entity, jecs.Name, name)
+end
+
+for _, entity in pairs(components :: any) do
+	world:add(entity, replecs.shared)
+end
+
+components.ref = REF
 
 return components

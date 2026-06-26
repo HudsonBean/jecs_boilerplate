@@ -11,9 +11,10 @@ local c = require("@Shared/components")
 local jecs = require("@Packages/jecs")
 local SpawnOptionsTypes = require("@Shared/types/spawn_options")
 local npc_configs = require("@Server/Configs/npc_configs")
-local ref = require("@Shared/utils/ecs/ref")
 local replicator = require("@Shared/replicator").server
 local world = require("@Shared/world")
+
+local ref = c.ref
 
 local TAG = "npc"
 local NPCS_FOLDER_NAME = "Npcs"
